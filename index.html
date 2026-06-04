@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeafScan Pro - AI Plant Health Diagnostics</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- TensorFlow.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+    <style>
+        :root {
+            /* Theme Colors */
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --primary-light: #d1fae5;
+            --primary-dark: #064e3b;
+            
+            --accent: #4f46e5;
+            --accent-light: #e0e7ff;
+            
+            --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #eef2ff 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(229, 231, 235, 0.6);
+            
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-light: #9ca3af;
+            
+            --status-healthy: #10b981;
+            --status-warning: #f59e0b;
+            --status-danger: #ef4444;
+            
+            /* Shadows & Border Radius */
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-col: column;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #022c22 100%);
+            color: white;
+            padding: 1.25rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .header-container {
+            max-w: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-content: center;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--primary);
+            font-weight: 300;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--status-warning);
+            box-shadow: 0 0 8px var(--status-warning);
+        }
+
+        .status-dot.active {
+            background-color: var(--status-healthy);
+            box-shadow: 0 0 10px var(--status-healthy);
+            animation: pulse 1.8s infinite;
+        }
+
+        .status-dot.failed {
+            background-color: var(--status-danger);
+            box-shadow: 0 0 10px var(--status-danger);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Main layout */
+        main {
+            max-width: 1200px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            main {
+                grid-template-columns: 1.1fr 0.9fr;
+            }
+        }
+
+        /* Card panels */
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: -1rem;
+        }
+
+        /* Drag & Drop Area */
+        .upload-zone {
+            border: 2px dashed #a7f3d0;
+            background: rgba(240, 253, 244, 0.4);
+            border-radius: var(--radius-md);
+            padding: 2.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: rgba(209, 250, 229, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .upload-zone:hover .upload-icon {
+            color: white;
+            background: var(--primary);
+            transform: scale(1.08);
+        }
+
+        .upload-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .upload-text span {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .upload-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        /* Image preview */
+        .preview-container {
+            width: 100%;
+            height: 280px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: #f3f4f6;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .preview-placeholder {
+            color: var(--text-light);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        /* Samples Grid */
+        .samples-section {
+            margin-top: 0.5rem;
+        }
+
+        .samples-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .samples-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .sample-card {
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sample-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-2px);
+        }
+
+        .sample-thumbnail {
+            width: 100%;
+            height: 60px;
+            border-radius: 6px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .sample-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Results panel */
+        .results-panel {
+            gap: 1.5rem;
+        }
+
+        .welcome-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 350px;
+            text-align: center;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .welcome-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #e6fffa;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        /* Diagnostics display */
+        .diagnostic-view {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diagnosis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.25rem;
+        }
+
+        .crop-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .diagnosis-title {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            white-space: nowrap;
+        }
+
+        .badge-healthy {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Confidence bar */
+        .confidence-section {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .confidence-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .confidence-label {
+            color: var(--text-muted);
+        }
+
+        .confidence-pct {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 50px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            border-radius: 50px;
+            transition: width 0.6s cubic-bezier(0.1, 0.8, 0.25, 1);
+        }
+
+        /* Care recommendations card */
+        .advice-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .advice-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .advice-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #374151;
+        }
+
+        /* Top 3 alternate diagnoses */
+        .alternate-diagnoses {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .alt-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alt-item {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .alt-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .alt-item-name {
+            color: var(--text-main);
+        }
+
+        .alt-item-pct {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .alt-progress-container {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 50px;
+            overflow: hidden;
+        }
+
+        .alt-progress-bar {
+            height: 100%;
+            background: #9ca3af;
+            border-radius: 50px;
+            transition: width 0.6s ease-out;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-t: 1px solid var(--border-color);
+            background: white;
+            margin-top: 2rem;
+        }
+
+        footer span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Hidden components */
+        .hidden-input {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                🌱 LeafScan <span>Pro</span>
+            </div>
+            <div class="status-badge" id="modelStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Loading AI Model...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Side: Interactive Upload Section -->
+        <section class="panel">
+            <div>
+                <h2 class="panel-title">🌿 Plant Diagnostic Hub</h2>
+                <p class="panel-subtitle">Upload a close-up photo of a crop leaf to analyze health issues instantly.</p>
+            </div>
+
+            <!-- Upload Area -->
+            <label for="imageUpload" class="upload-zone" id="dropZone">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    </svg>
+                </div>
+                <div class="upload-text">
+                    <span>Click to browse</span> or drag and drop image here
+                </div>
+                <p class="upload-hint">Supports JPEG, JPG, and PNG up to 10MB</p>
+                <input type="file" id="imageUpload" class="hidden-input" accept="image/*" disabled>
+            </label>
+
+            <!-- Image Preview Box -->
+            <div class="preview-container">
+                <div class="preview-placeholder" id="previewPlaceholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 36px; height: 36px; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                    <span>Selected image preview will appear here</span>
+                </div>
+                <img id="selectedImage" class="preview-image" alt="Leaf Sample Preview">
+            </div>
+
+            <!-- Sample Images Grid -->
+            <div class="samples-section">
+                <h3 class="samples-title">🧪 Try with Sample Leaves</h3>
+                <div class="samples-grid">
+                    <div class="sample-card" data-img="samples/apple_healthy.png">
+                        <div class="sample-thumbnail" style="background-image: url('samples/apple_healthy.png'); background-color: #d1fae5;"></div>
+                        <span class="sample-name">Apple (Healthy)</span>
+                    </div>
+                    <div class="sample-card" data-img="samples/potato_early_blight.png">
+                        <div class="sample-thumbnail" style="background-image: url('samples/potato_early_blight.png'); background-color: #fef3c7;"></div>
+                        <span class="sample-name">Potato (Blight)</span>
+                    </div>
+                    <div class="sample-card" data-img="samples/tomato_late_blight.png">
+                        <div class="sample-thumbnail" style="background-image: url('samples/tomato_late_blight.png'); background-color: #fee2e2;"></div>
+                        <span class="sample-name">Tomato (Blight)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Diagnostics Results -->
+        <section class="panel results-panel">
+            <!-- Welcome View (Shown when no image uploaded yet) -->
+            <div class="welcome-view" id="welcomeView">
+                <div class="welcome-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110.125 21a3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.745 3.745 0 013.296-1.043A3.745 3.745 0 0113.875 3a3.745 3.745 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    </svg>
+                </div>
+                <h3>Diagnostics Standby</h3>
+                <p>Upload a leaf image or click a sample card above to run the local edge neural network.</p>
+            </div>
+
+            <!-- Diagnostic Active View (Hidden by default) -->
+            <div class="diagnostic-view" id="diagnosticView">
+                <!-- Top Diagnosis Header -->
+                <div class="diagnosis-header">
+                    <div>
+                        <div class="crop-badge" id="cropLabel">Tomato</div>
+                        <h2 class="diagnosis-title" id="diseaseLabel">Late Blight</h2>
+                    </div>
+                    <div id="statusBadgeContainer">
+                        <span class="badge badge-warning" id="statusBadge">Alert</span>
+                    </div>
+                </div>
+
+                <!-- Confidence Score Box -->
+                <div class="confidence-section">
+                    <div class="confidence-header">
+                        <span class="confidence-label">Model Confidence</span>
+                        <span class="confidence-pct" id="confidencePct">0.0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="confidenceBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Actionable Treatment Recommendation -->
+                <div class="advice-card" id="adviceCard">
+                    <h4 class="advice-title" id="adviceTitle">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+                        </svg>
+                        Actionable Recommendations
+                    </h4>
+                    <p class="advice-text" id="adviceText">Please refer to crop guidelines.</p>
+                </div>
+
+                <!-- Top 3 Alternate Matches -->
+                <div class="alternate-diagnoses">
+                    <h4 class="alt-title">Matches Rank List</h4>
+                    <div id="altList">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Powered completely client-side by <span>TensorFlow.js</span> • PlantVillage MobileNetV2 Model • No data ever leaves your device.
+    </footer>
+
+    <script>
+        // 38 Class Dictionary containing Crop Name, Specific Disease, Healthy Status, and Actionable Care Advice.
+        const CLASS_MAPPING = {
+            0: { crop: "Apple", disease: "Apple Scab", healthy: false, advice: "Apply sulfur or copper-based fungicides during early bud break. Remove and destroy fallen leaves to prevent fungal spores from overwintering in the soil." },
+            1: { crop: "Apple", disease: "Black Rot", healthy: false, advice: "Prune out dead branches and infected twigs. Apply copper-based fungicides. Keep the ground clear of fallen mummified fruits." },
+            2: { crop: "Apple", disease: "Cedar Apple Rust", healthy: false, advice: "Remove nearby juniper/red cedar trees within a 1-mile radius if possible. Apply preventative fungicides during early spring wet periods." },
+            3: { crop: "Apple", disease: "Healthy", healthy: true, advice: "Your apple tree looks healthy! Maintain regular watering, annual pruning, and monitor for early pest signs." },
+            4: { crop: "Blueberry", disease: "Healthy", healthy: true, advice: "Healthy blueberry plant! Keep the soil acidic (pH 4.5 - 5.2), mulch with pine needles or bark, and water regularly." },
+            5: { crop: "Cherry", disease: "Powdery Mildew", healthy: false, advice: "Improve air circulation through selective pruning. Apply organic potassium bicarbonate or neem oil-based fungicides." },
+            6: { crop: "Cherry", disease: "Healthy", healthy: true, advice: "Your cherry tree is healthy! Maintain regular irrigation, and prune in early spring to facilitate sunlight penetration." },
+            7: { crop: "Corn", disease: "Gray Leaf Spot", healthy: false, advice: "Practice crop rotation with non-grasses next season. Use clean tillage and apply foliar fungicides if lesions appear before silking." },
+            8: { crop: "Corn", disease: "Common Rust", healthy: false, advice: "Rust is usually minor. Maintain optimal nitrogen fertilization. If severe, apply protective fungicides early in the season." },
+            9: { crop: "Corn", disease: "Northern Leaf Blight", healthy: false, advice: "Rotate crops, plant resistant corn hybrids, and apply labeled foliar fungicides if spotted on leaves during early development." },
+            10: { crop: "Corn", disease: "Healthy", healthy: true, advice: "Healthy corn crop! Maintain consistent moisture during silking and pollination phases to ensure optimal yield." },
+            11: { crop: "Grape", disease: "Black Rot", healthy: false, advice: "Prune infected canes and remove mummified berries. Spray copper-based fungicides starting at bud break through bloom." },
+            12: { crop: "Grape", disease: "Black Measles (Esca)", healthy: false, advice: "Apply wound dressing paint to pruning wounds immediately. Prune during dry winter periods to reduce fungal spore entry." },
+            13: { crop: "Grape", disease: "Leaf Blight (Isariopsis)", healthy: false, advice: "Improve trellis canopy airflow by thining dense shoots. Apply post-harvest copper fungicides to prevent overwintering spores." },
+            14: { crop: "Grape", disease: "Healthy", healthy: true, advice: "Healthy grapevines! Keep shoots tied, prune during dormancy, and maintain consistent drip irrigation." },
+            15: { crop: "Orange", disease: "Citrus Greening (HLB)", healthy: false, advice: "Note: HLB is fatal. Control Asian citrus psyllids with horticultural oil or chemical sprays. Remove infected trees to protect surrounding groves." },
+            16: { crop: "Peach", disease: "Bacterial Spot", healthy: false, advice: "Avoid overhead sprinklers to keep leaves dry. Apply copper-based sprays during dormant stages (late fall and early spring)." },
+            17: { crop: "Peach", disease: "Healthy", healthy: true, advice: "Healthy peach tree! Thin small fruits early in the season to prevent branch breakage and increase final fruit size." },
+            18: { crop: "Pepper Bell", disease: "Bacterial Spot", healthy: false, advice: "Water plants at the base to keep foliage dry. Apply copper sprays. Practice a 3-year crop rotation without nightshade crops." },
+            19: { crop: "Pepper Bell", disease: "Healthy", healthy: true, advice: "Healthy peppers! Provide consistent moisture and enrich soil with calcium (e.g. bone meal) to prevent blossom-end rot." },
+            20: { crop: "Potato", disease: "Early Blight", healthy: false, advice: "Practice crop rotation. Apply protective copper fungicides. Water early in the day so foliage dries quickly. Remove crop residues." },
+            21: { crop: "Potato", disease: "Late Blight", healthy: false, advice: "Highly contagious. Apply chlorothalonil or copper fungicides immediately. Destroy infected plants to halt regional spore transmission." },
+            22: { crop: "Potato", disease: "Healthy", healthy: true, advice: "Healthy potatoes! Hill soil around the base of the plants to keep growing tubers fully covered and protected from sunlight." },
+            23: { crop: "Raspberry", disease: "Healthy", healthy: true, advice: "Healthy raspberry canes! Prune out fruited canes immediately after harvest. Keep the base clear of weeds to improve airflow." },
+            24: { crop: "Soybean", disease: "Healthy", healthy: true, advice: "Healthy soybean crop! Monitor weekly for aphids or Japanese beetles, and keep field margins mowed to reduce pest habitats." },
+            25: { crop: "Squash", disease: "Powdery Mildew", healthy: false, advice: "Spray with organic neem oil or sulfur-based fungicides. Space plants widely to increase air circulation and reduce humidity." },
+            26: { crop: "Strawberry", disease: "Leaf Scorch", healthy: false, advice: "Remove spotted leaves immediately. Avoid overhead watering. Plant clean runners and spray preventative organic fungicides." },
+            27: { crop: "Strawberry", disease: "Healthy", healthy: true, advice: "Healthy strawberries! Keep berries off the ground using straw mulch to prevent soil-borne rot, and pinch off early runners." },
+            28: { crop: "Tomato", disease: "Bacterial Spot", healthy: false, advice: "Prune lower leaves to avoid soil splash. Spray copper bactericides. Do not work in the garden when leaves are wet." },
+            29: { crop: "Tomato", disease: "Early Blight", healthy: false, advice: "Remove lowest leaves up to 18 inches to prevent soil-splash infection. Apply preventative copper fungicides during warm, humid weather." },
+            30: { crop: "Tomato", disease: "Late Blight", healthy: false, advice: "Extreme threat. Keep foliage dry. Apply copper sprays. If infection spreads, pull and discard entire plant in trash (do not compost)." },
+            31: { crop: "Tomato", disease: "Leaf Mold", healthy: false, advice: "Common in greenhouses. Keep humidity below 85% by increasing ventilation and spacing plants. Apply organic fungicides." },
+            32: { crop: "Tomato", disease: "Septoria Leaf Spot", healthy: false, advice: "Mulch the soil base heavily. Trim infected bottom leaves. Apply copper-based or chlorothalonil sprays every 7-10 days." },
+            33: { crop: "Tomato", disease: "Spider Mites (Two-spotted)", healthy: false, advice: "Mist leaves to raise humidity (mites prefer dry dust). Apply insecticidal soap or release predatory mites (Phytoseiulus)." },
+            34: { crop: "Tomato", disease: "Target Spot", healthy: false, advice: "Improve air circulation by staking and pruning suckers. Apply protective fungicides and clean tools thoroughly after use." },
+            35: { crop: "Tomato", disease: "Yellow Leaf Curl Virus", healthy: false, advice: "Transmitted by whiteflies. Use yellow sticky cards to trap vectors. Cover plants with fine insect netting. Remove infected plants." },
+            36: { crop: "Tomato", disease: "Tomato Mosaic Virus", healthy: false, advice: "Very stable virus spread mechanically. Disinfect tools with a 10% bleach solution. Remove and burn infected crops. Wash hands." },
+            37: { crop: "Tomato", disease: "Healthy", healthy: true, advice: "Healthy tomato plant! Keep watering consistently to prevent blossom-end rot, and prune suckers to promote main stem growth." }
+        };
+
+        const ui = {
+            uploadInput: document.getElementById('imageUpload'),
+            dropZone: document.getElementById('dropZone'),
+            statusDot: document.getElementById('statusDot'),
+            statusText: document.getElementById('statusText'),
+            previewPlaceholder: document.getElementById('previewPlaceholder'),
+            selectedImage: document.getElementById('selectedImage'),
+            
+            welcomeView: document.getElementById('welcomeView'),
+            diagnosticView: document.getElementById('diagnosticView'),
+            
+            cropLabel: document.getElementById('cropLabel'),
+            diseaseLabel: document.getElementById('diseaseLabel'),
+            statusBadge: document.getElementById('statusBadge'),
+            statusBadgeContainer: document.getElementById('statusBadgeContainer'),
+            
+            confidencePct: document.getElementById('confidencePct'),
+            confidenceBar: document.getElementById('confidenceBar'),
+            
+            adviceCard: document.getElementById('adviceCard'),
+            adviceText: document.getElementById('adviceText'),
+            altList: document.getElementById('altList')
+        };
+
+        let model;
+        const TARGET_SIZE = 224; // MobileNetV2 input shape
+
+        // Initialize TensorFlow.js Layers Model
+        async function initModel() {
+            try {
+                // Load model converted to Graph Model format
+                model = await tf.loadGraphModel('web_model/model.json');
+                
+                // Set UI state to active
+                ui.statusDot.classList.add('active');
+                ui.statusText.innerText = "Model Active";
+                ui.uploadInput.disabled = false;
+                console.log("LeafScan MobileNetV2 neural model loaded successfully into WebGL GPU memory.");
+            } catch (error) {
+                ui.statusDot.classList.add('failed');
+                ui.statusText.innerText = "Model Mount Error";
+                console.error("Critical error loading model architecture:", error);
+            }
+        }
+
+        // Setup File Upload Pipeline
+        ui.uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            processFile(file);
+        });
+
+        // Drag and Drop support
+        ui.dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            ui.dropZone.style.borderColor = "var(--primary)";
+        });
+
+        ui.dropZone.addEventListener('dragleave', () => {
+            ui.dropZone.style.borderColor = "#a7f3d0";
+        });
+
+        ui.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            ui.dropZone.style.borderColor = "#a7f3d0";
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processFile(file);
+            }
+        });
+
+        // Sample Cards Click handler
+        document.querySelectorAll('.sample-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const imgPath = card.getAttribute('data-img');
+                ui.selectedImage.src = imgPath;
+                ui.previewPlaceholder.style.display = 'none';
+                ui.selectedImage.style.display = 'block';
+                
+                ui.selectedImage.onload = () => {
+                    triggerInference();
+                };
+            });
+        });
+
+        function processFile(file) {
+            ui.selectedImage.src = URL.createObjectURL(file);
+            ui.previewPlaceholder.style.display = 'none';
+            ui.selectedImage.style.display = 'block';
+            
+            ui.selectedImage.onload = () => {
+                triggerInference();
+            };
+        }
+
+        async function triggerInference() {
+            // Show loading placeholder state
+            ui.welcomeView.style.display = 'none';
+            ui.diagnosticView.style.display = 'flex';
+            
+            ui.cropLabel.innerText = "Processing...";
+            ui.diseaseLabel.innerText = "Running GPU Inference...";
+            ui.statusBadgeContainer.innerHTML = '';
+            ui.confidencePct.innerText = "0.0%";
+            ui.confidenceBar.style.width = "0%";
+            ui.adviceText.innerText = "Please wait while the neural layers analyze the image tensor...";
+            ui.altList.innerHTML = '';
+
+            // Allow thread context switch for loading screen reflow
+            await tf.nextFrame();
+            executeInference();
+        }
+
+        // Core Tensor Processing and Forward Pass
+        function executeInference() {
+            tf.tidy(() => {
+                // Convert HTML Image element into 3D Float Tensor
+                let tensor = tf.browser.fromPixels(ui.selectedImage)
+                    .resizeNearestNeighbor([TARGET_SIZE, TARGET_SIZE])
+                    .toFloat();
+
+                // Note: The Keras 3 model has built-in TrueDivide (divide by 127.5) and Subtract (subtract 1.0)
+                // normalization layers. We feed raw [0..255] pixels to the input layer.
+                tensor = tensor.expandDims(0);
+
+                // Run Prediction
+                const predictionsTensor = model.predict(tensor);
+                const predictions = predictionsTensor.dataSync();
+
+                renderResults(predictions);
+            });
+        }
+
+        // Render Results Dashboard
+        function renderResults(predictions) {
+            // Map index to scores and sort descending
+            const indexedScores = Array.from(predictions).map((score, index) => ({
+                index,
+                score
+            })).sort((a, b) => b.score - a.score);
+
+            const topMatch = indexedScores[0];
+            const confidence = topMatch.score * 100;
+            const meta = CLASS_MAPPING[topMatch.index] || { crop: "Unknown", disease: "Unknown Class", healthy: false, advice: "No advice available." };
+
+            // 1. Update Primary Diagnosis Card
+            ui.cropLabel.innerText = meta.crop;
+            ui.diseaseLabel.innerText = meta.disease;
+            ui.confidencePct.innerText = `${confidence.toFixed(1)}%`;
+            ui.confidenceBar.style.width = `${confidence}%`;
+
+            // Adjust colors of confidence bar
+            if (meta.healthy) {
+                ui.confidenceBar.style.backgroundColor = "var(--status-healthy)";
+                ui.statusBadgeContainer.innerHTML = `<span class="badge badge-healthy">Healthy</span>`;
+                ui.adviceCard.style.borderLeftColor = "var(--status-healthy)";
+            } else {
+                // If serious disease (like Late Blight), show Danger badge, else show Warning
+                if (meta.disease.includes("Late Blight") || meta.disease.includes("Greening")) {
+                    ui.confidenceBar.style.backgroundColor = "var(--status-danger)";
+                    ui.statusBadgeContainer.innerHTML = `<span class="badge badge-danger">Severe Alert</span>`;
+                    ui.adviceCard.style.borderLeftColor = "var(--status-danger)";
+                } else {
+                    ui.confidenceBar.style.backgroundColor = "var(--status-warning)";
+                    ui.statusBadgeContainer.innerHTML = `<span class="badge badge-warning">Disease Alert</span>`;
+                    ui.adviceCard.style.borderLeftColor = "var(--status-warning)";
+                }
+            }
+
+            // 2. Actionable Care Advice
+            ui.adviceText.innerText = meta.advice;
+
+            // 3. Top 3 Alternate Matches
+            ui.altList.innerHTML = '';
+            for (let i = 1; i <= 3; i++) {
+                const item = indexedScores[i];
+                if (!item) break;
+                
+                const altPct = item.score * 100;
+                const altMeta = CLASS_MAPPING[item.index] || { crop: "Unknown", disease: "Unknown" };
+                
+                const altHtml = `
+                    <div class="alt-item">
+                        <div class="alt-item-header">
+                            <span class="alt-item-name">${altMeta.crop} - ${altMeta.disease}</span>
+                            <span class="alt-item-pct">${altPct.toFixed(1)}%</span>
+                        </div>
+                        <div class="alt-progress-container">
+                            <div class="alt-progress-bar" style="width: ${altPct}%; background-color: ${altMeta.healthy ? 'var(--status-healthy)' : 'var(--status-warning)'}"></div>
+                        </div>
+                    </div>
+                `;
+                ui.altList.insertAdjacentHTML('beforeend', altHtml);
+            }
+        }
+
+        // Initialize application on startup
+        initModel();
+    </script>
+</body>
+
+</html>
