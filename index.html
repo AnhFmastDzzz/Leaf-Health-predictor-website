@@ -5,12 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeafScan Pro - AI Plant Health Diagnostics</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- TensorFlow.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 
@@ -21,28 +23,28 @@
             --primary-hover: #059669;
             --primary-light: #d1fae5;
             --primary-dark: #064e3b;
-            
+
             --accent: #4f46e5;
             --accent-light: #e0e7ff;
-            
+
             --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #eef2ff 100%);
             --card-bg: rgba(255, 255, 255, 0.85);
             --border-color: rgba(229, 231, 235, 0.6);
-            
+
             --text-main: #1f2937;
             --text-muted: #6b7280;
             --text-light: #9ca3af;
-            
+
             --status-healthy: #10b981;
             --status-warning: #f59e0b;
             --status-danger: #ef4444;
-            
+
             /* Shadows & Border Radius */
             --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
             --radius-lg: 18px;
             --radius-md: 12px;
-            
+
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -64,7 +66,10 @@
             justify-content: space-between;
         }
 
-        h1, h2, h3, h4 {
+        h1,
+        h2,
+        h3,
+        h4 {
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
         }
@@ -136,9 +141,20 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            50% { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.6; }
+            0% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
         }
 
         /* Main layout */
@@ -184,7 +200,8 @@
         .panel-subtitle {
             font-size: 0.9rem;
             color: var(--text-muted);
-            margin-top: -1rem;
+            margin-top: 1rem;
+            margin-left: 2rem;
         }
 
         /* Drag & Drop Area */
@@ -367,8 +384,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .diagnosis-header {
@@ -597,8 +621,10 @@
             <!-- Upload Area -->
             <label for="imageUpload" class="upload-zone" id="dropZone">
                 <div class="upload-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 24px; height: 24px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                        stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
                     </svg>
                 </div>
                 <div class="upload-text">
@@ -611,8 +637,10 @@
             <!-- Image Preview Box -->
             <div class="preview-container">
                 <div class="preview-placeholder" id="previewPlaceholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 36px; height: 36px; opacity: 0.5;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" style="width: 36px; height: 36px; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                     </svg>
                     <span>Selected image preview will appear here</span>
                 </div>
@@ -624,15 +652,21 @@
                 <h3 class="samples-title">🧪 Try with Sample Leaves</h3>
                 <div class="samples-grid">
                     <div class="sample-card" data-img="samples/apple_healthy.png">
-                        <div class="sample-thumbnail" style="background-image: url('samples/apple_healthy.png'); background-color: #d1fae5;"></div>
+                        <div class="sample-thumbnail"
+                            style="background-image: url('samples/apple_healthy.png'); background-color: #d1fae5;">
+                        </div>
                         <span class="sample-name">Apple (Healthy)</span>
                     </div>
                     <div class="sample-card" data-img="samples/potato_early_blight.png">
-                        <div class="sample-thumbnail" style="background-image: url('samples/potato_early_blight.png'); background-color: #fef3c7;"></div>
+                        <div class="sample-thumbnail"
+                            style="background-image: url('samples/potato_early_blight.png'); background-color: #fef3c7;">
+                        </div>
                         <span class="sample-name">Potato (Blight)</span>
                     </div>
                     <div class="sample-card" data-img="samples/tomato_late_blight.png">
-                        <div class="sample-thumbnail" style="background-image: url('samples/tomato_late_blight.png'); background-color: #fee2e2;"></div>
+                        <div class="sample-thumbnail"
+                            style="background-image: url('samples/tomato_late_blight.png'); background-color: #fee2e2;">
+                        </div>
                         <span class="sample-name">Tomato (Blight)</span>
                     </div>
                 </div>
@@ -644,8 +678,10 @@
             <!-- Welcome View (Shown when no image uploaded yet) -->
             <div class="welcome-view" id="welcomeView">
                 <div class="welcome-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110.125 21a3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.745 3.745 0 013.296-1.043A3.745 3.745 0 0113.875 3a3.745 3.745 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" style="width: 32px; height: 32px;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110.125 21a3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.745 3.745 0 013.296-1.043A3.745 3.745 0 0113.875 3a3.745 3.745 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
                     </svg>
                 </div>
                 <h3>Diagnostics Standby</h3>
@@ -679,8 +715,10 @@
                 <!-- Actionable Treatment Recommendation -->
                 <div class="advice-card" id="adviceCard">
                     <h4 class="advice-title" id="adviceTitle">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 18px; height: 18px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" style="width: 18px; height: 18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
                         </svg>
                         Actionable Recommendations
                     </h4>
@@ -699,7 +737,7 @@
     </main>
 
     <footer>
-        Powered completely client-side by <span>TensorFlow.js</span> • PlantVillage MobileNetV2 Model • No data ever leaves your device.
+        Powered completely client-side by <span>TensorFlow.js</span> • PlantVillage MobileNetV2 Model
     </footer>
 
     <script>
@@ -752,18 +790,18 @@
             statusText: document.getElementById('statusText'),
             previewPlaceholder: document.getElementById('previewPlaceholder'),
             selectedImage: document.getElementById('selectedImage'),
-            
+
             welcomeView: document.getElementById('welcomeView'),
             diagnosticView: document.getElementById('diagnosticView'),
-            
+
             cropLabel: document.getElementById('cropLabel'),
             diseaseLabel: document.getElementById('diseaseLabel'),
             statusBadge: document.getElementById('statusBadge'),
             statusBadgeContainer: document.getElementById('statusBadgeContainer'),
-            
+
             confidencePct: document.getElementById('confidencePct'),
             confidenceBar: document.getElementById('confidenceBar'),
-            
+
             adviceCard: document.getElementById('adviceCard'),
             adviceText: document.getElementById('adviceText'),
             altList: document.getElementById('altList')
@@ -778,7 +816,7 @@
                 // Load Graph Model (produced by convert_model_fixed.py via SavedModel export)
                 // This model has normalization baked in — input expects raw float32 [0, 255] pixels.
                 model = await tf.loadGraphModel('web_model/model.json');
-                
+
                 // Warm-up pass to initialize WebGL shaders (avoids first-inference lag)
                 const warmup = tf.zeros([1, 224, 224, 3]);
                 const warmupOut = model.execute({ 'image': warmup });
@@ -829,7 +867,7 @@
                 ui.selectedImage.src = imgPath;
                 ui.previewPlaceholder.style.display = 'none';
                 ui.selectedImage.style.display = 'block';
-                
+
                 ui.selectedImage.onload = () => {
                     triggerInference();
                 };
@@ -840,7 +878,7 @@
             ui.selectedImage.src = URL.createObjectURL(file);
             ui.previewPlaceholder.style.display = 'none';
             ui.selectedImage.style.display = 'block';
-            
+
             ui.selectedImage.onload = () => {
                 triggerInference();
             };
@@ -850,7 +888,7 @@
             // Show loading placeholder state
             ui.welcomeView.style.display = 'none';
             ui.diagnosticView.style.display = 'flex';
-            
+
             ui.cropLabel.innerText = "Processing...";
             ui.diseaseLabel.innerText = "Running GPU Inference...";
             ui.statusBadgeContainer.innerHTML = '';
@@ -934,10 +972,10 @@
             for (let i = 1; i <= 3; i++) {
                 const item = indexedScores[i];
                 if (!item) break;
-                
+
                 const altPct = item.score * 100;
                 const altMeta = CLASS_MAPPING[item.index] || { crop: "Unknown", disease: "Unknown" };
-                
+
                 const altHtml = `
                     <div class="alt-item">
                         <div class="alt-item-header">
