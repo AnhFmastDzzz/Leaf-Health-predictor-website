@@ -605,7 +605,7 @@
                     <span>Click to browse</span> or drag and drop image here
                 </div>
                 <p class="upload-hint">Supports JPEG, JPG, and PNG up to 10MB</p>
-                <input type="file" id="imageUpload" class="hidden-input" accept="image/*" disabled>
+                <input type="file" id="imageUpload" class="hidden-input" accept="image/*">
             </label>
 
             <!-- Image Preview Box -->
@@ -772,21 +772,27 @@
         let model;
         const TARGET_SIZE = 224; // MobileNetV2 input shape
 
-        // Initialize TensorFlow.js Layers Model
+        // Initialize TensorFlow.js Graph Model
         async function initModel() {
             try {
-                // Load model converted to Graph Model format
+                // Load Graph Model (produced by convert_model_fixed.py via SavedModel export)
+                // This model has normalization baked in — input expects raw float32 [0, 255] pixels.
                 model = await tf.loadGraphModel('web_model/model.json');
                 
+                // Warm-up pass to initialize WebGL shaders (avoids first-inference lag)
+                const warmup = tf.zeros([1, 224, 224, 3]);
+                const warmupOut = model.execute({ 'image': warmup });
+                warmupOut.dispose();
+                warmup.dispose();
+
                 // Set UI state to active
                 ui.statusDot.classList.add('active');
                 ui.statusText.innerText = "Model Active";
-                ui.uploadInput.disabled = false;
-                console.log("LeafScan MobileNetV2 neural model loaded successfully into WebGL GPU memory.");
+                console.log("LeafScan MobileNetV2 Graph Model loaded and warmed up successfully.");
             } catch (error) {
                 ui.statusDot.classList.add('failed');
                 ui.statusText.innerText = "Model Mount Error";
-                console.error("Critical error loading model architecture:", error);
+                console.error("Critical error loading model:", error);
             }
         }
 
@@ -860,18 +866,24 @@
 
         // Core Tensor Processing and Forward Pass
         function executeInference() {
+            if (!model) {
+                ui.cropLabel.innerText = "Model Error";
+                ui.diseaseLabel.innerText = "AI model not loaded";
+                ui.adviceText.innerText = "The model failed to load. Please open the browser console (F12) to see the error, or run convert_model_fixed.py to regenerate the web_model folder.";
+                return;
+            }
             tf.tidy(() => {
-                // Convert HTML Image element into 3D Float Tensor
-                let tensor = tf.browser.fromPixels(ui.selectedImage)
+                // Convert HTML Image element into a float32 tensor [0, 255].
+                // Normalization to [-1, 1] is now BAKED INTO the model (Rescaling layer),
+                // so we just cast to float and batch-expand — no manual division needed.
+                const tensor = tf.browser.fromPixels(ui.selectedImage)
                     .resizeNearestNeighbor([TARGET_SIZE, TARGET_SIZE])
-                    .toFloat();
+                    .toFloat()
+                    .expandDims(0); // shape: [1, 224, 224, 3]
 
-                // Note: The Keras 3 model has built-in TrueDivide (divide by 127.5) and Subtract (subtract 1.0)
-                // normalization layers. We feed raw [0..255] pixels to the input layer.
-                tensor = tensor.expandDims(0);
-
-                // Run Prediction
-                const predictionsTensor = model.predict(tensor);
+                // Graph Model uses execute() with a named input dictionary.
+                // Input key 'image' matches the SavedModel serving signature.
+                const predictionsTensor = model.execute({ 'image': tensor });
                 const predictions = predictionsTensor.dataSync();
 
                 renderResults(predictions);
